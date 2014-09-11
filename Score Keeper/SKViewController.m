@@ -58,28 +58,36 @@ static CGFloat scoreViewHeight = 100;
     scoreStepper.maximumValue = 1000;
     [scoreView addSubview:scoreStepper];
     
+    // Just for debugging to set the scores to be different initially
+//    scoreStepper.value = theIndex;
+    
     label.text = [NSString stringWithFormat:@"%.0f",scoreStepper.value];
+    // Calling this method is going to pass in the stepper—I want to understand this better!
+    [scoreStepper addTarget:self action:@selector(updateScore:) forControlEvents:UIControlEventValueChanged];
+    
 }
 
-- (UIView *)createSubviewForViewController {
+- (void)updateScore:(UIStepper *) scoreStepperUpdating {
     
+    // Help with debugging that I can access all of the data that I want
+    NSLog(@"Entered scoreStepperUpdating");
+    NSLog(@"Stepper: %@", scoreStepperUpdating);
+    NSLog(@"Stepper Superview: %@", scoreStepperUpdating.superview);
+    NSLog(@"Superview Subviews: %@", scoreStepperUpdating.superview.subviews);
+    NSLog(@"New Stepper Value: %f", scoreStepperUpdating.value);
     
-    UIView *scoreView = [[UIView alloc] initWithFrame:CGRectMake(0, 60, self.view.frame.size.width, 100)];
-    scoreView.backgroundColor = [UIColor greenColor];
-
-    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(15, 15, 200, 20)];
-    label.text = @"Change me";
+    // Superview is the scoreView, its subviews are: [0] UITextField, [1] UILabel, [2] UIStepper
+    NSLog(@"UILabel should be: %@", scoreStepperUpdating.superview.subviews[1]);
     
-    UIButton *button = [[UIButton alloc] initWithFrame:CGRectMake(100, 10, 200, 50)];
-    [button setTitle:@"Click to change text" forState:UIControlStateNormal];
-//    [button addTarget:self action:@selector(changeLabelText:label:) forControlEvents:UIControlEventTouchUpInside];
+    UILabel *scoreLabel = (UILabel *)scoreStepperUpdating.superview.subviews[1];
+    // Make sure I can get the text of the scoreLabel
+    NSLog(@"UILabel text should be: %@", scoreLabel.text);
+    // Update the label to the new value of the stepper
+    scoreLabel.text = [NSString stringWithFormat:@"%.0f",scoreStepperUpdating.value];
     
-    [scoreView addSubview:label];
-    [scoreView addSubview:button];
+//    scoreStepperUpdating.superview.subviews[1].text = scoreStepperUpdating.value;
     
-    return scoreView;
 }
-
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
