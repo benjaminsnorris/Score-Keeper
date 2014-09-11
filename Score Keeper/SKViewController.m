@@ -75,6 +75,7 @@ static CGFloat scoreViewHeight = 100;
     UITextField *nameField = [[UITextField alloc] initWithFrame:CGRectMake(margin, 0, 125, scoreViewHeight)];
     nameField.placeholder = @"Name";
     nameField.delegate = self;
+    [nameField addTarget:self action:@selector(textFieldDidChange) forControlEvents:UIControlEventEditingChanged];
     [scoreView addSubview:nameField];
     
     UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(margin + 125, 0, 75, scoreViewHeight)];
@@ -102,7 +103,12 @@ static CGFloat scoreViewHeight = 100;
     UILabel *scoreLabel = (UILabel *)scoreStepperUpdating.superview.subviews[1];
     // Update the label to the new value of the stepper
     scoreLabel.text = [NSString stringWithFormat:@"%.0f",scoreStepperUpdating.value];
+    self.navigationItem.leftBarButtonItem = self.resetButton;
     
+}
+
+- (void)textFieldDidChange {
+    self.navigationItem.leftBarButtonItem = self.resetButton;
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
