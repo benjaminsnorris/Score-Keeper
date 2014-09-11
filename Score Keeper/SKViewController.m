@@ -12,6 +12,8 @@ int initialNumberOfScores = 4;
 int currentNumberOfScores = 0;
 static CGFloat const margin = 15;
 static CGFloat scoreViewHeight = 100;
+static CGFloat navAndStatusBarHeight;
+UITextField* activeField;
 
 @interface SKViewController () <UITextFieldDelegate>
 
@@ -26,14 +28,21 @@ static CGFloat scoreViewHeight = 100;
     [super viewDidLoad];
     // Do any additional setup after loading the view.
 
+    navAndStatusBarHeight = self.navigationController.navigationBar.frame.size.height + [UIApplication sharedApplication].statusBarFrame.size.height;
     self.view.backgroundColor = [UIColor whiteColor];
     self.title = @"Score Keeper";
     
+    // QUESITON: If I set the y to be navAndStatusBarHeight, the scrollView is offset down, but I don't know why
     self.scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height)];
     [self.view addSubview:self.scrollView];
     self.scrollView.backgroundColor = [UIColor grayColor];
     
     [self initializeViews];
+    
+    // Listen for the keyboard to show up
+    [self registerForKeyboardNotifications];
+    // Could dismiss the keyboard when you drag
+//    self.scrollView.keyboardDismissMode = UIScrollViewKeyboardDismissModeOnDrag;
     
     // Add the add button
     UIBarButtonItem *addButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(addNewScore)];
@@ -107,13 +116,56 @@ static CGFloat scoreViewHeight = 100;
     
 }
 
+- (void)textFieldDidBeginEditing:(UITextField *)textField {
+    // Track the active field so we can make sure it is visible
+    activeField = textField;
+}
+
+- (void)textFieldDidEndEditing:(UITextField *)textField {
+    // Done typing, so no more active field
+    activeField = nil;
+}
+
 - (void)textFieldDidChange {
+    // Add the reset button as soon as you start typing a name
     self.navigationItem.leftBarButtonItem = self.resetButton;
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    // This dismisses the keyboard
     [textField resignFirstResponder];
     return YES;
+}
+
+- (void)registerForKeyboardNotifications {
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWasShown:) name:UIKeyboardDidShowNotification object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillBeHidden:) name:UIKeyboardWillHideNotification object:nil];
+}
+
+- (void)keyboardWasShown: (NSNotification*) aNotification {
+    // Get the notification and parse out the keyboard size
+    NSDictionary* info = [aNotification userInfo];
+    CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
+    
+    // Inset the bottom of the scrollView to the size of the keyboard
+    UIEdgeInsets contentInsets = UIEdgeInsetsMake(navAndStatusBarHeight, 0.0, kbSize.height, 0.0);
+    self.scrollView.contentInset = contentInsets;
+    self.scrollView.scrollIndicatorInsets = contentInsets;
+    
+    CGRect aRect = self.view.frame;
+    aRect.size.height -= kbSize.height;
+    if(!CGRectContainsRect(aRect, activeField.frame)) {
+        [self.scrollView scrollRectToVisible:activeField.frame animated:YES];
+    }
+}
+
+- (void)keyboardWillBeHidden: (NSNotification*) aNotification {
+    // Reset the scrollView to be in the original place
+    // QUESTION: If I use UIEdgeInsetsZero here, the scrollView is at the top of the window. Why is this different than when initializing it?
+    UIEdgeInsets contentInsets = UIEdgeInsetsMake(navAndStatusBarHeight, 0.0, 0.0, 0.0);
+    self.scrollView.contentInset = contentInsets;
+    self.scrollView.scrollIndicatorInsets = contentInsets;
 }
 
 - (void)didReceiveMemoryWarning {
