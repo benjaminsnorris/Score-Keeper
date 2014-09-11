@@ -8,13 +8,14 @@
 
 #import "SKViewController.h"
 
-int myIndex = 0;
+int initialNumberOfScores = 4;
+int currentNumberOfScores = 0;
 static CGFloat const margin = 15;
 static CGFloat scoreViewHeight = 100;
 
 @interface SKViewController () <UITextFieldDelegate>
 
-@property (nonatomic, strong) NSMutableArray *scoreLabels;
+@property (nonatomic, strong) UIScrollView *scrollView;
 
 @end
 
@@ -27,20 +28,44 @@ static CGFloat scoreViewHeight = 100;
     self.view.backgroundColor = [UIColor whiteColor];
     self.title = @"Score Keeper";
     
-    UIScrollView *scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height)];
-    [self.view addSubview:scrollView];
+    self.scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height)];
+    [self.view addSubview:self.scrollView];
     
-    for (int i=0; i<4; i++) {
-        [self addScoreView:i toView:scrollView];
-    }
+    [self initializeViews];
     
-    // Set this to the number of subviews * scoreViewHeight
-    // scrollView.contentSize = CGSizeMake(self.view.frame.size.width, self.view.frame.size.height*1.5);
+    // Deal with the nav bar buttons
+    UIBarButtonItem *addButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(addNewScore)];
+    self.navigationItem.rightBarButtonItem = addButton;
+        
 }
 
-- (void)addScoreView:(int) theIndex toView:(UIView *) addToView {
+- (void)initializeViews {
+    for (int i=0; i<initialNumberOfScores; i++) {
+        [self addScoreView:i];
+    }
+}
+
+- (void)addNewScore {
+    [self addScoreView:currentNumberOfScores];
+    UIBarButtonItem *resetButton = [[UIBarButtonItem alloc] initWithTitle:@"Reset" style:UIBarButtonItemStylePlain target:self action:@selector(resetScores)];
+    self.navigationItem.leftBarButtonItem = resetButton;
+
+}
+
+- (void)resetScores {
+    // Reset all of the subviews of scrollView
+    for (UIView *view in self.scrollView.subviews) {
+        [view removeFromSuperview];
+    }
+    currentNumberOfScores = 0;
+    self.navigationItem.leftBarButtonItem = nil;
+    [self initializeViews];
+    
+}
+
+- (void)addScoreView:(int) theIndex {
     UIView *scoreView = [[UIView alloc] initWithFrame:CGRectMake(0, scoreViewHeight * theIndex, self.view.frame.size.width, scoreViewHeight)];
-    [addToView addSubview:scoreView];
+    [self.scrollView addSubview:scoreView];
     scoreView.backgroundColor = [UIColor whiteColor];
     scoreView.layer.borderColor = [UIColor blackColor].CGColor;
     scoreView.layer.borderWidth = 1;
@@ -63,6 +88,10 @@ static CGFloat scoreViewHeight = 100;
     // Calling this method is going to pass in the stepper—I want to understand this better!
     [scoreStepper addTarget:self action:@selector(updateScore:) forControlEvents:UIControlEventValueChanged];
     
+    currentNumberOfScores++;
+    
+    // Increase the size of the scrollView to hold all of the views
+    self.scrollView.contentSize = CGSizeMake(self.view.frame.size.width, currentNumberOfScores * scoreViewHeight);
 }
 
 - (void)updateScore:(UIStepper *) scoreStepperUpdating {
