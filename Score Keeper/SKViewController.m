@@ -8,17 +8,17 @@
 
 #import "SKViewController.h"
 
-int initialNumberOfScores = 4;
-int currentNumberOfScores = 0;
-static CGFloat const margin = 15;
-static CGFloat scoreViewHeight = 100;
-static CGFloat navAndStatusBarHeight;
-UITextField* activeField;
+// This is cleaner because it is a compile-time directive
+#define initialNumberOfScores ((NSInteger) 4)
+#define margin 15.0
+#define scoreViewHeight 100.0
 
 @interface SKViewController () <UITextFieldDelegate>
 
 @property (nonatomic, strong) UIScrollView *scrollView;
 @property (nonatomic, strong) UIBarButtonItem *resetButton;
+@property (nonatomic, assign) NSInteger currentNumberOfScores;
+@property (nonatomic, strong) UITextField *activeField;
 
 @end
 
@@ -27,8 +27,9 @@ UITextField* activeField;
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
+    
+    self.currentNumberOfScores = 0;
 
-    navAndStatusBarHeight = self.navigationController.navigationBar.frame.size.height + [UIApplication sharedApplication].statusBarFrame.size.height;
     self.view.backgroundColor = [UIColor whiteColor];
     self.title = @"Score Keeper";
     
@@ -36,6 +37,8 @@ UITextField* activeField;
     self.scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 0, self.view.frame.size.width, self.view.frame.size.height)];
     [self.view addSubview:self.scrollView];
     self.scrollView.backgroundColor = [UIColor grayColor];
+    
+    self.scrollView.alwaysBounceVertical = YES;
     
     [self initializeViews];
     
@@ -53,13 +56,13 @@ UITextField* activeField;
 }
 
 - (void)initializeViews {
-    for (int i=0; i<initialNumberOfScores; i++) {
+    for (NSInteger i=0; i<initialNumberOfScores; i++) {
         [self addScoreView:i];
     }
 }
 
 - (void)addNewScore {
-    [self addScoreView:currentNumberOfScores];
+    [self addScoreView:self.currentNumberOfScores];
     
     // Set the rest button to be the left button of the nav bar
     self.navigationItem.leftBarButtonItem = self.resetButton;
@@ -70,14 +73,14 @@ UITextField* activeField;
     for (UIView *view in self.scrollView.subviews) {
         [view removeFromSuperview];
     }
-    currentNumberOfScores = 0;
+    self.currentNumberOfScores = 0;
     self.navigationItem.leftBarButtonItem = nil;
     [self initializeViews];
     
 }
 
-- (void)addScoreView:(int) theIndex {
-    UIView *scoreView = [[UIView alloc] initWithFrame:CGRectMake(0, scoreViewHeight * theIndex + currentNumberOfScores, self.view.frame.size.width, scoreViewHeight)];
+- (void)addScoreView:(NSInteger) theIndex {
+    UIView *scoreView = [[UIView alloc] initWithFrame:CGRectMake(0, scoreViewHeight * theIndex + self.currentNumberOfScores, self.view.frame.size.width, scoreViewHeight)];
     [self.scrollView addSubview:scoreView];
     scoreView.backgroundColor = [UIColor whiteColor];
     
@@ -100,10 +103,10 @@ UITextField* activeField;
     // Calling this method is going to pass in the stepper—I want to understand this better!
     [scoreStepper addTarget:self action:@selector(updateScore:) forControlEvents:UIControlEventValueChanged];
     
-    currentNumberOfScores++;
+    self.currentNumberOfScores++;
     
     // Increase the size of the scrollView to hold all of the views
-    self.scrollView.contentSize = CGSizeMake(self.view.frame.size.width, currentNumberOfScores * scoreViewHeight + currentNumberOfScores);
+    self.scrollView.contentSize = CGSizeMake(self.view.frame.size.width, self.currentNumberOfScores * scoreViewHeight + self.currentNumberOfScores);
 }
 
 - (void)updateScore:(UIStepper *) scoreStepperUpdating {
@@ -118,12 +121,12 @@ UITextField* activeField;
 
 - (void)textFieldDidBeginEditing:(UITextField *)textField {
     // Track the active field so we can make sure it is visible
-    activeField = textField;
+    self.activeField = textField;
 }
 
 - (void)textFieldDidEndEditing:(UITextField *)textField {
     // Done typing, so no more active field
-    activeField = nil;
+    self.activeField = nil;
 }
 
 - (void)textFieldDidChange {
@@ -149,23 +152,27 @@ UITextField* activeField;
     CGSize kbSize = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue].size;
     
     // Inset the bottom of the scrollView to the size of the keyboard
-    UIEdgeInsets contentInsets = UIEdgeInsetsMake(navAndStatusBarHeight, 0.0, kbSize.height, 0.0);
+    UIEdgeInsets contentInsets = UIEdgeInsetsMake([self navAndStatusBarHeight], 0.0, kbSize.height, 0.0);
     self.scrollView.contentInset = contentInsets;
     self.scrollView.scrollIndicatorInsets = contentInsets;
     
     CGRect aRect = self.view.frame;
     aRect.size.height -= kbSize.height;
-    if(!CGRectContainsRect(aRect, activeField.frame)) {
-        [self.scrollView scrollRectToVisible:activeField.frame animated:YES];
+    if(!CGRectContainsRect(aRect, self.activeField.frame)) {
+        [self.scrollView scrollRectToVisible:self.activeField.frame animated:YES];
     }
 }
 
 - (void)keyboardWillBeHidden: (NSNotification*) aNotification {
     // Reset the scrollView to be in the original place
     // QUESTION: If I use UIEdgeInsetsZero here, the scrollView is at the top of the window. Why is this different than when initializing it?
-    UIEdgeInsets contentInsets = UIEdgeInsetsMake(navAndStatusBarHeight, 0.0, 0.0, 0.0);
+    UIEdgeInsets contentInsets = UIEdgeInsetsMake([self navAndStatusBarHeight], 0.0, 0.0, 0.0);
     self.scrollView.contentInset = contentInsets;
     self.scrollView.scrollIndicatorInsets = contentInsets;
+}
+
+- (CGFloat)navAndStatusBarHeight {
+    return self.navigationController.navigationBar.frame.size.height + [UIApplication sharedApplication].statusBarFrame.size.height;
 }
 
 - (void)didReceiveMemoryWarning {
