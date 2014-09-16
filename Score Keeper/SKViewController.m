@@ -9,7 +9,7 @@
 #import "SKViewController.h"
 
 // This is cleaner because it is a compile-time directive
-#define initialNumberOfScores ((NSInteger) 4)
+#define initialNumberOfScores 2
 #define margin 15.0
 #define scoreViewHeight 100.0
 
@@ -87,6 +87,8 @@
     UITextField *nameField = [[UITextField alloc] initWithFrame:CGRectMake(margin, 0, 125, scoreViewHeight)];
     nameField.placeholder = @"Name";
     nameField.delegate = self;
+    // Show clear button while editing
+    nameField.clearButtonMode = UITextFieldViewModeWhileEditing;
     [nameField addTarget:self action:@selector(textFieldDidChange) forControlEvents:UIControlEventEditingChanged];
     [scoreView addSubview:nameField];
     
